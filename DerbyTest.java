@@ -8,6 +8,7 @@ import java.sql.SQLException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -89,6 +90,7 @@ public class DerbyTest {
 		localizeText();
 
 		JFrame.setDefaultLookAndFeelDecorated(true);
+		JDialog.setDefaultLookAndFeelDecorated(true);
 		JFrame frame = new JFrame();
 		frame.setTitle("Derby Test");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
