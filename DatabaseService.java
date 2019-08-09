@@ -17,7 +17,7 @@ public class DatabaseService {
 	private static final String dbPrefix = "jdbc:derby:";
 
 	private static final String getTableNamesQuery = "SELECT st.tablename FROM sys.systables st LEFT OUTER JOIN sys.sysschemas ss ON (st.schemaid = ss.schemaid) WHERE ss.schemaname ='APP'";
-	private static final String getColumnNamesQuery = "SELECT columnname FROM sys.syscolumns WHERE referenceid = (select tableid FROM sys.systables WHERE tablename = ?) ORDER BY columnnumber";
+	private static final String getColumnNamesQuery = "SELECT columnname,columndatatype FROM sys.syscolumns WHERE referenceid = (select tableid FROM sys.systables WHERE tablename = ?) ORDER BY columnnumber";
 
 	public class StructureLoader extends SwingWorker<Void, String> {
 
@@ -41,8 +41,21 @@ public class DatabaseService {
 				queryResult = preparedStatement.executeQuery();
 				StringBuilder tableStruct = new StringBuilder("");
 				tableStruct.append(tableName).append("\n");
-				while (queryResult.next())
+				while (queryResult.next()) {
+					String type=queryResult.getString(2);
+					if (type.contains("INTEGER") || type.contains("DECIMAL"))
+						tableStruct.append(".[n]");
+					else if (type.contains("CHAR"))
+						tableStruct.append(".[s]");
+					else if (type.contains("DATE"))
+						tableStruct.append(".[d]");
+					else if (type.contains("TIME"))
+						tableStruct.append(".[t]");
+					else if (type.contains("BOOLEAN"))
+						tableStruct.append(".[b]");
+					else tableStruct.append(".[?]");
 					tableStruct.append(".").append(queryResult.getString(1).toLowerCase()).append("\n");
+				}
 				tableStruct.append("\n");
 				publish(tableStruct.toString());
 			}
