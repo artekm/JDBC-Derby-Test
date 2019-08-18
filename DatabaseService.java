@@ -1,5 +1,4 @@
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,17 +6,30 @@ import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.sql.DataSource;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
+
+import org.apache.derby.jdbc.EmbeddedDataSource;
+import org.apache.derby.jdbc.EmbeddedDataSourceInterface;
 
 public class DatabaseService {
 	private static Connection connection;
 	private static Statement statement;
-	private static String dbURL;
-	private static final String dbPrefix = "jdbc:derby:";
+	private static String dbName;
+//	private static final String dbPrefix = "jdbc:derby://localhost:1527/";
+//	private static final String dbPrefix = "jdbc:derby:";
 
 	private static final String getTableNamesQuery = "SELECT st.tablename FROM sys.systables st LEFT OUTER JOIN sys.sysschemas ss ON (st.schemaid = ss.schemaid) WHERE ss.schemaname ='APP'";
 	private static final String getColumnNamesQuery = "SELECT columnname,columndatatype FROM sys.syscolumns WHERE referenceid = (select tableid FROM sys.systables WHERE tablename = ?) ORDER BY columnnumber";
+
+	public static DataSource getDS(String database, String user, String password) throws SQLException {
+
+		EmbeddedDataSourceInterface ds = new EmbeddedDataSource();
+
+		ds.setDatabaseName(database);
+		return ds;
+	}
 
 	public class StructureLoader extends SwingWorker<Void, String> {
 
@@ -42,7 +54,7 @@ public class DatabaseService {
 				StringBuilder tableStruct = new StringBuilder("");
 				tableStruct.append(tableName).append("\n");
 				while (queryResult.next()) {
-					String type=queryResult.getString(2);
+					String type = queryResult.getString(2);
 					if (type.contains("INTEGER") || type.contains("DECIMAL"))
 						tableStruct.append(".[n]");
 					else if (type.contains("CHAR"))
@@ -53,7 +65,8 @@ public class DatabaseService {
 						tableStruct.append(".[t]");
 					else if (type.contains("BOOLEAN"))
 						tableStruct.append(".[b]");
-					else tableStruct.append(".[?]");
+					else
+						tableStruct.append(".[?]");
 					tableStruct.append(".").append(queryResult.getString(1).toLowerCase()).append("\n");
 				}
 				tableStruct.append("\n");
@@ -105,28 +118,38 @@ public class DatabaseService {
 		return sb.toString();
 	}
 
-	public String changeDB(String newName) throws SQLException {
+	public String changeDB(String newName) {
 		try {
 			disconnectDB();
-			String newURL = dbPrefix + newName;
-			connectDB(newURL);
-			dbURL = newURL;
+			connectDB(newName);
+			dbName = newName;
 			return "Baza " + newName + " pod³¹czona";
 		} catch (SQLException e) {
-			connectDB(dbURL);
+			try {
+				connectDB(dbName);
+			} catch (SQLException ignored) {
+			}
 			return getExceptionText(e);
 		}
 	}
 
-	public void connectDB(String url) throws SQLException {
-		if (url != null) {
-			connection = DriverManager.getConnection(url);
+	public String getDbName() {
+		return dbName;
+	}
+	
+	public void connectDB(String dbName) throws SQLException {
+		if (dbName != null) {
+			DataSource ds = getDS(dbName, null, null);
+			connection = ds.getConnection();
 			statement = connection.createStatement();
 		}
 	}
 
-	public void disconnectDB() throws SQLException {
-		if (connection != null)
-			connection.close();
+	public void disconnectDB() {
+		try {
+			if (connection != null)
+				connection.close();
+		} catch (SQLException ignored) {
+		}
 	}
 }

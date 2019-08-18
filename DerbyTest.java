@@ -4,7 +4,6 @@ import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.sql.SQLException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -159,28 +158,22 @@ public class DerbyTest {
 			chooser.setDialogTitle("Wybierz bazê danych");
 			int result = chooser.showDialog(null, "Wybierz");
 			if (result == JFileChooser.APPROVE_OPTION) {
-				try {
-					String nazwa = chooser.getSelectedFile().getName().toUpperCase();
-					String newName = chooser.getSelectedFile().toString();
-					textResult.setText(databaseService.changeDB(newName));
+				String nazwa = chooser.getSelectedFile().getName().toUpperCase();
+				String newName = chooser.getSelectedFile().toString();
+				textResult.setText(databaseService.changeDB(newName));
+				if (newName.equals(databaseService.getDbName())) {
 					databaseService.loadStructure(textStructure);
 					frame.setTitle("Derby Test : " + nazwa);
 					buttonSend.setEnabled(true);
 					buttonClear.setEnabled(true);
 					textCommand.setEnabled(true);
 					textCommand.grabFocus();
-				} catch (SQLException e) {
-					e.printStackTrace();
 				}
 			}
 		});
 
 		buttonEnd.addActionListener(event -> {
-			try {
-				databaseService.disconnectDB();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			databaseService.disconnectDB();
 			SwingUtilities.getWindowAncestor(buttonEnd).dispose();
 		});
 
